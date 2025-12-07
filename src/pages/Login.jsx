@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { setToken } from "../api";
+import { login } from "../api/auth";
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState("");
@@ -15,20 +16,10 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        (import.meta.env.VITE_API_URL || "http://localhost:8000") +
-          "/auth/token",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        }
-      );
+      const { ok, status, data } = await login(username, password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Login failed");
+      if (!ok) {
+        throw new Error(data?.detail || "Login failed");
       }
 
       // Store the token
@@ -47,40 +38,47 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="container">
-      <div style={{ maxWidth: 420, margin: "28px auto" }} className="card">
-        <h2>Login</h2>
+    <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "70vh" }}>
+      <div className="card" style={{ maxWidth: 420, width: "100%" }}>
+        <h2 className="text-center mb-lg">Login</h2>
         {err && (
-          <div style={{ color: "crimson", marginBottom: "12px" }}>{err}</div>
+          <div className="alert alert-error mb-lg">
+            {err}
+          </div>
         )}
-        <form
-          onSubmit={submit}
-          style={{ display: "flex", flexDirection: "column", gap: 8 }}
-        >
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
-            required
-            disabled={loading}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-            disabled={loading}
-          />
+        <form onSubmit={submit} className="flex flex-col gap-md">
+          <div>
+            <label>Username</label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+            />
+          </div>
           <button className="button" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <div style={{ marginTop: 12, textAlign: "center" }}>
-          Don't have an account?{" "}
-          <a href="/signup" style={{ color: "#646cff" }}>
-            Sign up
-          </a>
+        <div className="text-center mt-lg">
+          <p className="text-secondary">
+            Don't have an account?{" "}
+            <Link to="/signup" style={{ color: "var(--primary)", fontWeight: 600 }}>
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </div>

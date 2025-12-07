@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 export async function apiRequest(
   endpoint,
@@ -9,12 +9,29 @@ export async function apiRequest(
   const headers = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : null,
-  });
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null,
+    });
 
-  const data = await res.json().catch(() => null);
-  return { ok: res.ok, status: res.status, data };
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json().catch(() => null);
+    } else {
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+    }
+    
+    return { ok: res.ok, status: res.status, data };
+  } catch (error) {
+    console.error("API request error:", error);
+    return { ok: false, status: 0, data: { detail: error.message || "Network error" } };
+  }
 }

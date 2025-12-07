@@ -91,11 +91,9 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ user, setUser, logout }}>
-      <div>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <NavBar />
-        <main
-          style={{ maxWidth: 1100, margin: "20px auto", padding: "0 16px" }}
-        >
+        <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login onLogin={loginRefresh} />} />

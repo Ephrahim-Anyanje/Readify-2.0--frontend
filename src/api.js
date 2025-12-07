@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 const TOKEN_KEY = "readify_token";
 
 export function setToken(token) {
@@ -15,15 +15,32 @@ export async function apiFetch(path, opts = {}) {
   const headers = opts.headers ? { ...opts.headers } : {};
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (!opts.body && !(opts.method && opts.method.toUpperCase() === "GET")) {
+  if (opts.body || (opts.method && opts.method.toUpperCase() !== "GET")) {
     headers["Content-Type"] = headers["Content-Type"] || "application/json";
   }
-  const res = await fetch(API_BASE + path, { ...opts, headers });
-  if (res.status === 401) throw new Error("Unauthorized");
-  const text = await res.text();
+  
   try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+    const res = await fetch(API_BASE + path, { ...opts, headers });
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    
+    if (!res.ok) {
+      const error = new Error(data?.detail || data?.message || `Request failed with status ${res.status}`);
+      error.status = res.status;
+      error.data = data;
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    if (error.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    throw error;
   }
 }
